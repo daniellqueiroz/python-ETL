@@ -1,0 +1,33 @@
+
+
+import os
+import urllib
+import pandas as pd
+import sqlalchemy as sa
+
+dir = 'C:\\AUDITORIA\\'
+
+params = urllib.parse.quote_plus("DRIVER={SQL Server Native Client 11.0};"
+                                 "SERVER=.;"
+                                 "DATABASE=TST;"
+                                 "Trusted_Connection=yes")
+
+engine = sa.create_engine("mssql+pyodbc:///?odbc_connect={}".format(params))
+
+files = []
+for r, d, f in os.walk(dir):
+    for file in f:
+        if 'AREX' in file:
+            files.append(os.path.join(r, file))
+
+for f in files: 
+    try:
+        df = pd.concat(pd.read_excel(f, sheet_name=None), ignore_index=True)
+        df.to_sql('CARGA_AUDIT_CRED_COB', con = engine, if_exists = 'append', chunksize = 10000)
+        print(f + ' ... [OK!]\n')
+    except:
+        print(f + ' ... [ERRO!]\n')
+        continue
+
+
+print(' Processo concluido com sucesso! \n')
